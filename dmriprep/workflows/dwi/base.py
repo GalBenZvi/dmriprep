@@ -31,7 +31,7 @@ from ... import config
 from ...interfaces import DerivativesDataSink
 
 
-def init_dwi_preproc_wf(dwi_file, has_fieldmap=False):
+def init_dwi_preproc_wf(dwi_file):
     """
     Build a preprocessing workflow for one DWI run.
 
