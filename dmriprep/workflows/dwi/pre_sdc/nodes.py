@@ -2,7 +2,9 @@ import nipype.pipeline.engine as pe
 from dmriprep.workflows.dwi.pre_sdc.configurations import (
     DEGIBBS_KWARGS,
     DENOISE_KWARGS,
+    EXTRACT_KWARGS,
     INPUT_NODE_FIELDS,
+    MEAN_B0_KWARGS,
     OUTPUT_NODE_FIELDS,
 )
 from nipype.interfaces import mrtrix3 as mrt
@@ -17,7 +19,7 @@ OUTPUT_NODE = pe.Node(
 )
 
 #: Building blocks
-DENOISE_NODE = pe.Node(mrt.DWIDenoise(), name="denoise")
-DEGIBBS_NODE = pe.Node(mrt.MRDeGibbs(), name="degibbs")
-EXTRACT_NODE = pe.Node(mrt.DWIExtract(), name="extract_b0")
-MEAN_B0_NODE = pe.Node(mrt.MRMath(), name="mean_b0")
+DENOISE_NODE = pe.Node(mrt.DWIDenoise(**DENOISE_KWARGS), name="denoise")
+DEGIBBS_NODE = pe.Node(mrt.MRDeGibbs(**DEGIBBS_KWARGS), name="degibbs")
+EXTRACT_NODE = pe.Node(mrt.DWIExtract(**EXTRACT_KWARGS), name="extract_b0")
+MEAN_B0_NODE = pe.Node(mrt.MRMath(**MEAN_B0_KWARGS), name="mean_b0")

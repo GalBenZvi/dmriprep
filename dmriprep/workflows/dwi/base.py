@@ -23,7 +23,11 @@
 """Orchestrating the dMRI-preprocessing workflow."""
 from pathlib import Path
 
+from dmriprep.workflows.dwi.conversions.nii_to_mif.nii_to_mif_wf import (
+    init_nii_to_mif_wf,
+)
 from dmriprep.workflows.dwi.fieldmap_query.nodes import OPPOSITE_PHASE_NODE
+from dmriprep.workflows.dwi.pre_sdc.pre_sdc import init_pre_sdc_wf
 from dmriprep.workflows.dwi.utils import (
     _aslist,
     _get_wf_name,
@@ -97,9 +101,10 @@ def init_dwi_preproc_wf(dwi_file):
 
     """
     from niworkflows.engine.workflows import LiterateWorkflow as Workflow
-    from niworkflows.interfaces.reportlets.registration import (
-        SimpleBeforeAfterRPT as SimpleBeforeAfter,
-    )
+
+    # from niworkflows.interfaces.reportlets.registration import (
+    #     SimpleBeforeAfterRPT as SimpleBeforeAfter,
+    # )
     from niworkflows.workflows.epi.refmap import init_epi_reference_wf
     from sdcflows.workflows.ancillary import init_brainextraction_wf
 
@@ -149,6 +154,30 @@ def init_dwi_preproc_wf(dwi_file):
     inputnode.inputs.dwi_file = str(dwi_file.absolute())
     fmap_query = OPPOSITE_PHASE_NODE
     workflow.connect([(inputnode, fmap_query, [("dwi_file", "dwi_file")])])
+
+    mif_conversion_wf = init_nii_to_mif_wf()
+    pre_sdc_wf = init_pre_sdc_wf()
+    workflow.connect(
+        [
+            (
+                inputnode,
+                mif_conversion_wf,
+                [("dwi_file", "inputnode.dwi_file")],
+            ),
+            (
+                fmap_query,
+                mif_conversion_wf,
+                [("fmap_file", "inputnode.fmap_file")],
+            ),
+            (
+                mif_conversion_wf,
+                pre_sdc_wf,
+                [
+                    ("outputnode.dwi_file", "inputnode.dwi_file"),
+                ],
+            ),
+        ]
+    )
     return workflow
     outputnode = pe.Node(
         niu.IdentityInterface(
