@@ -4,36 +4,11 @@ from dmriprep.workflows.dwi.conversions.nii_to_mif.configurations import (
     LOCATE_ASSOCIATED_KWARGS,
     OUTPUT_NODE_FIELDS,
 )
+from dmriprep.workflows.dwi.conversions.nii_to_mif.utils import (
+    locate_associated_files,
+)
 from nipype.interfaces import mrtrix3 as mrt
 from nipype.interfaces import utility as niu
-
-
-def locate_associated_files(in_file: str):
-    """
-    Locates associated json (and possibly bvec & bval) files.
-
-    Parameters
-    ----------
-    in_file : str
-        Input file.
-
-    Returns
-    -------
-    Tuple[str, str, str]
-        Tuple of associated json (and possibly bvec & bval) files.
-    """
-    from dmriprep.config import config
-    from nipype.interfaces.base import traits
-
-    associated_extenstions = ["json", "bvec", "bval"]
-    layout = config.execution.layout
-    output = {}
-    for key in associated_extenstions:
-        output[key] = (
-            layout.get_nearest(in_file, extension=key) or traits.Undefined
-        )
-    return [output.get(key) for key in associated_extenstions]
-
 
 #: i/o
 INPUT_NODE = pe.Node(

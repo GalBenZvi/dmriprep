@@ -403,35 +403,34 @@ Diffusion data preprocessing
 format (i.e., given in RAS+ scanner coordinates, normalized b-vectors and scaled b-values),
 and a *b=0* average for reference to the subsequent steps of preprocessing was calculated.
 """
-    fmap_estimators = None
-    if "fieldmap" not in config.workflow.ignore:
-        from sdcflows import fieldmaps as fm
-        from sdcflows.utils.wrangler import find_estimators
-        from sdcflows.workflows.base import init_fmap_preproc_wf
+#     fmap_estimators = None
+#     if "fieldmap" not in config.workflow.ignore:
+#         from sdcflows import fieldmaps as fm
+#         from sdcflows.utils.wrangler import find_estimators
+#         from sdcflows.workflows.base import init_fmap_preproc_wf
 
-        # SDC Step 1: Run basic heuristics to identify available data for fieldmap estimation
-        fmap_estimators = find_estimators(
-            layout=config.execution.layout,
-            subject=subject_id,
-            fmapless=config.workflow.use_syn,
-            force_fmapless=config.workflow.force_syn,
-        )
+#         # SDC Step 1: Run basic heuristics to identify available data for fieldmap estimation
+#         fmap_estimators = find_estimators(
+#             layout=config.execution.layout,
+#             subject=subject_id,
+#             fmapless=config.workflow.use_syn,
+#             force_fmapless=config.workflow.force_syn,
+#         )
 
-        if (
-            any(f.method == fm.EstimatorType.ANAT for f in fmap_estimators)
-            and "MNI152NLin2009cAsym" not in spaces.get_spaces(nonstandard=False, dim=(3,))
-        ):
-            # Although this check would go better within parser, allow datasets with fieldmaps
-            # not to require spatial standardization of the T1w.
-            raise RuntimeError("""\
-Argument '--use-sdc-syn' requires having 'MNI152NLin2009cAsym' as one output standard space. \
-Please add the 'MNI152NLin2009cAsym' keyword to the '--output-spaces' argument""")
+#         if (
+#             any(f.method == fm.EstimatorType.ANAT for f in fmap_estimators)
+#             and "MNI152NLin2009cAsym" not in spaces.get_spaces(nonstandard=False, dim=(3,))
+#         ):
+#             # Although this check would go better within parser, allow datasets with fieldmaps
+#             # not to require spatial standardization of the T1w.
+#             raise RuntimeError("""\
+# Argument '--use-sdc-syn' requires having 'MNI152NLin2009cAsym' as one output standard space. \
+# Please add the 'MNI152NLin2009cAsym' keyword to the '--output-spaces' argument""")
     # Nuts and bolts: initialize individual run's pipeline
     dwi_preproc_list = []
     for dwi_file in subject_data["dwi"]:
         dwi_preproc_wf = init_dwi_preproc_wf(
             dwi_file,
-            has_fieldmap=True,
         )
         if dwi_preproc_wf is None:
             continue
@@ -460,6 +459,7 @@ Please add the 'MNI152NLin2009cAsym' keyword to the '--output-spaces' argument""
 
         # # Keep a handle to each workflow
         dwi_preproc_list.append(dwi_preproc_wf)
+    return workflow
 
     if not fmap_estimators:
         config.loggers.workflow.warning(

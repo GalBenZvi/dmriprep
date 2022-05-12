@@ -1,0 +1,54 @@
+import nipype.pipeline.engine as pe
+from dmriprep.workflows.dwi.sdc.configurations import (
+    INPUT_NODE_FIELDS,
+    MRCAT_KWARGS,
+    OUTPUT_NODE_FIELDS,
+    SDC_KWARGS,
+)
+from dmriprep.workflows.dwi.sdc.edges import (  # INPUT_TO_SDC_EDGES,
+    INPUT_TO_MERGE_EDGES,
+    MERGE_TO_MRCAT_EDGES,
+    MRCAT_TO_SDC_EDGES,
+    SDC_TO_OUTPUT_EDGES,
+)
+from nipype.interfaces import mrtrix3 as mrt
+from nipype.interfaces import utility as niu
+from niworkflows.engine.workflows import LiterateWorkflow as Workflow
+
+
+def init_sdc_wf(name="sdc_wf") -> Workflow:
+    """
+    Workflow for Susceptibility Distortion Correction.
+
+    Parameters
+    ----------
+    name : str, optional
+        Name of workflow. Defaults to "sdc_wf".
+
+    Returns
+    -------
+    Workflow
+        Workflow for Susceptibility Distortion Correction.
+    """
+    #: i/o
+    INPUT_NODE = pe.Node(
+        niu.IdentityInterface(fields=INPUT_NODE_FIELDS), name="inputnode"
+    )
+    OUTPUT_NODE = pe.Node(
+        niu.IdentityInterface(fields=OUTPUT_NODE_FIELDS), name="outputnode"
+    )
+
+    #: Building blocks
+    MERGE_NODE = pe.Node(niu.Merge(2), name="merge_dwi_series")
+    MRCAT_NODE = pe.Node(mrt.MRCat(**MRCAT_KWARGS), name="concat_dwi_series")
+    SDC_NODE = pe.Node(mrt.DWIPreproc(**SDC_KWARGS), name="sdc")
+    wf = Workflow(name=name)
+    SDC_WF = [
+        (INPUT_NODE, MERGE_NODE, INPUT_TO_MERGE_EDGES),
+        (MERGE_NODE, MRCAT_NODE, MERGE_TO_MRCAT_EDGES),
+        (MRCAT_NODE, SDC_NODE, MRCAT_TO_SDC_EDGES),
+        # (INPUT_NODE, SDC_NODE, INPUT_TO_SDC_EDGES),
+        (SDC_NODE, OUTPUT_NODE, SDC_TO_OUTPUT_EDGES),
+    ]
+    wf.connect(SDC_WF)
+    return wf

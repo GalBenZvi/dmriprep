@@ -1,6 +1,6 @@
 #: i/o
 INPUT_NODE_FIELDS = ["dwi_file"]
-OUTPUT_NODE_FIELDS = ["dwi_preproc", "noise", "bzero", "mean_bzero"]
+OUTPUT_NODE_FIELDS = ["dwi_pre_sdc", "noise", "bzero", "mean_bzero"]
 
 #: Keyword arguments
 DENOISE_KWARGS = dict(out_file="denoised.mif", noise="noise.nii.gz")

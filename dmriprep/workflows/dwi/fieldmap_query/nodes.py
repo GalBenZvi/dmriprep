@@ -26,38 +26,40 @@ def locate_opposite_phase(dwi_file: str):
     entities = parse_file_entities(dwi_file)
     _ = entities.pop("direction", None)
     # Query DWI file's phase direction
-    direction = layout.get_metadata(dwi_file).get("PhaseEncodingDirection")
+    dwi_pe_dir = layout.get_metadata(dwi_file).get("PhaseEncodingDirection")
     # Check if opposite phase DWI is available
+    fieldmap_is_dwi = True
     available_dwis = layout.get("file", **entities)
     available_dwis.remove(str(dwi_file))
     opposite_dwis = []
     for dwi in available_dwis:
-        if check_opposite(direction, dwi, layout):
+        if check_opposite(dwi_pe_dir, dwi, layout):
             opposite_dwis.append(dwi)
     if len(opposite_dwis) == 1:
-        return opposite_dwis[0]
+        return opposite_dwis[0], fieldmap_is_dwi, dwi_pe_dir
     elif len(opposite_dwis) > 1:
         config.logger.warning(
             """Located more than one opposite phase DWI.
             Will use the first one."""
         )
-        return opposite_dwis[0]
+        return opposite_dwis[0], fieldmap_is_dwi, dwi_pe_dir
+    fieldmap_is_dwi = False
     # If no opposite phase DWI is available, look for dedicated fieldmaps
-    fieldmaps = layout.get_fieldmap(dwi_file)
+    fieldmaps = layout.get_fieldmap(dwi_file, return_list=True)
     if fieldmaps:
         fnames = [list(val.values())[0] for val in fieldmaps]
     opposite_fmaps = []
     for fname in fnames:
-        if check_opposite(direction, fname, layout):
+        if check_opposite(dwi_pe_dir, fname, layout):
             opposite_fmaps.append(fname)
     if len(opposite_fmaps) == 1:
-        return opposite_fmaps[0]
+        return opposite_fmaps[0], fieldmap_is_dwi, dwi_pe_dir
     elif len(opposite_fmaps) > 1:
         config.logger.warning(
             """Located more than one opposite phase fieldmap.
             Will use the first one."""
         )
-        return opposite_fmaps[0]
+        return opposite_fmaps[0], fieldmap_is_dwi, dwi_pe_dir
     # If no opposite phase fieldmap is available, raise error
     raise NotImplementedError(
         """No opposite phase fieldmap/DWI series found.
