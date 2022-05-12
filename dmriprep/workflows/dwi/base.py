@@ -159,20 +159,6 @@ def init_dwi_preproc_wf(dwi_file):
     fmap_query = init_fieldmap_query()
     workflow.connect([(inputnode, fmap_query, [("dwi_file", "dwi_file")])])
     mif_conversion_wf = init_nii_to_mif_wf()
-    # workflow.connect(
-    #     [
-    #         (
-    #             inputnode,
-    #             mif_conversion_wf,
-    #             [("dwi_file", "inputnode.dwi_file")],
-    #         ),
-    #         (
-    #             fmap_query,
-    #             mif_conversion_wf,
-    #             [("fmap_file", "inputnode.fmap_file")],
-    #         ),
-    #     ]
-    # )
     pre_sdc_wf = init_pre_sdc_wf(config.workflow.ignore)
     workflow.connect(
         [
