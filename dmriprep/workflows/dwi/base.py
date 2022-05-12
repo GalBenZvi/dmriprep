@@ -26,8 +26,12 @@ from pathlib import Path
 from dmriprep.workflows.dwi.conversions.nii_to_mif.nii_to_mif_wf import (
     init_nii_to_mif_wf,
 )
+from dmriprep.workflows.dwi.fieldmap_query.fieldmap_query import (
+    init_fieldmap_query,
+)
 from dmriprep.workflows.dwi.fieldmap_query.nodes import OPPOSITE_PHASE_NODE
 from dmriprep.workflows.dwi.pre_sdc.pre_sdc import init_pre_sdc_wf
+from dmriprep.workflows.dwi.sdc.sdc import init_sdc_wf
 from dmriprep.workflows.dwi.utils import (
     _aslist,
     _get_wf_name,
@@ -152,11 +156,10 @@ def init_dwi_preproc_wf(dwi_file):
         name="inputnode",
     )
     inputnode.inputs.dwi_file = str(dwi_file.absolute())
-    fmap_query = OPPOSITE_PHASE_NODE
+    fmap_query = init_fieldmap_query()
     workflow.connect([(inputnode, fmap_query, [("dwi_file", "dwi_file")])])
-
     mif_conversion_wf = init_nii_to_mif_wf()
-    pre_sdc_wf = init_pre_sdc_wf()
+    pre_sdc_wf = init_pre_sdc_wf(config.workflow.ignore)
     workflow.connect(
         [
             (
@@ -175,6 +178,29 @@ def init_dwi_preproc_wf(dwi_file):
                 [
                     ("outputnode.dwi_file", "inputnode.dwi_file"),
                 ],
+            ),
+        ]
+    )
+
+    sdc_wf = init_sdc_wf()
+    workflow.connect(
+        [
+            (
+                pre_sdc_wf,
+                sdc_wf,
+                [("outputnode.dwi_pre_sdc", "inputnode.dwi_file")],
+            ),
+            (
+                fmap_query,
+                sdc_wf,
+                [
+                    ("dwi_pe_dir", "inputnode.dwi_pe_dir"),
+                ],
+            ),
+            (
+                mif_conversion_wf,
+                sdc_wf,
+                [("outputnode.fmap_file", "inputnode.fmap_file")],
             ),
         ]
     )
