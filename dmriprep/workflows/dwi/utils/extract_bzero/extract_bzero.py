@@ -5,12 +5,6 @@ from dmriprep.workflows.dwi.utils.extract_bzero.edges import (
     INPUT_TO_EXTRACT_EDGES,
     MEAN_TO_OUTPUT_EDGES,
 )
-from dmriprep.workflows.dwi.utils.extract_bzero.nodes import (
-    init_extract_node,
-    init_inputnode,
-    init_mean_b0_node,
-    init_outputnode,
-)
 
 
 def init_extract_bzero_wf(name: str = "extract_bzero") -> pe.Workflow:
@@ -27,6 +21,13 @@ def init_extract_bzero_wf(name: str = "extract_bzero") -> pe.Workflow:
     wf : nipype.pipeline.engine.Workflow
         Extract_bzero workflow.
     """
+    from dmriprep.workflows.dwi.utils.extract_bzero.nodes import (
+        init_extract_node,
+        init_inputnode,
+        init_mean_b0_node,
+        init_outputnode,
+    )
+
     wf = pe.Workflow(name=name)
     inputnode, outputnode, extract_bzero, mean_bzero = [
         func()

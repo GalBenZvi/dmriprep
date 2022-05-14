@@ -23,20 +23,7 @@
 """Orchestrating the dMRI-preprocessing workflow."""
 from pathlib import Path
 
-from dmriprep.workflows.dwi.conversions.nii_to_mif.nii_to_mif_wf import (
-    init_nii_to_mif_wf,
-)
-from dmriprep.workflows.dwi.fieldmap_query.fieldmap_query import (
-    init_fieldmap_query,
-)
-from dmriprep.workflows.dwi.fieldmap_query.nodes import OPPOSITE_PHASE_NODE
-from dmriprep.workflows.dwi.pre_sdc.pre_sdc import init_pre_sdc_wf
-from dmriprep.workflows.dwi.sdc.sdc import init_sdc_wf
-from dmriprep.workflows.dwi.utils import (
-    _aslist,
-    _get_wf_name,
-    extract_entities,
-)
+from dmriprep.workflows.dwi.utils import _aslist, _get_wf_name
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 
@@ -104,7 +91,17 @@ def init_dwi_preproc_wf(dwi_file):
     * :py:func:`~dmriprep.workflows.dwi.outputs.init_reportlets_wf`
 
     """
+    from dmriprep.workflows.dwi.conversions.nii_to_mif.nii_to_mif_wf import (
+        init_nii_to_mif_wf,
+    )
+    from dmriprep.workflows.dwi.fieldmap_query.fieldmap_query import (
+        init_fieldmap_query,
+    )
+    from dmriprep.workflows.dwi.post_sdc.post_sdc import init_post_sdc_wf
+    from dmriprep.workflows.dwi.pre_sdc.pre_sdc import init_pre_sdc_wf
+    from dmriprep.workflows.dwi.sdc.sdc import init_sdc_wf
     from niworkflows.engine.workflows import LiterateWorkflow as Workflow
+    from niworkflows.interfaces.nibabel import ApplyMask
 
     # from niworkflows.interfaces.reportlets.registration import (
     #     SimpleBeforeAfterRPT as SimpleBeforeAfter,
@@ -181,7 +178,6 @@ def init_dwi_preproc_wf(dwi_file):
             ),
         ]
     )
-
     sdc_wf = init_sdc_wf()
     workflow.connect(
         [
@@ -204,6 +200,30 @@ def init_dwi_preproc_wf(dwi_file):
             ),
         ]
     )
+
+    t1w_brain = pe.Node(ApplyMask(), name="t1w_brain")
+    workflow.connect(
+        [
+            (
+                inputnode,
+                t1w_brain,
+                [("t1w_preproc", "in_file"), ("t1w_mask", "in_mask")],
+            ),
+        ]
+    )
+    post_sdc_wf = init_post_sdc_wf()
+    workflow.connect(
+        [
+            (inputnode, post_sdc_wf, [("t1w_preproc", "inputnode.t1w_head")]),
+            (t1w_brain, post_sdc_wf, [("out_file", "inputnode.t1w_brain")]),
+            (
+                sdc_wf,
+                post_sdc_wf,
+                [("outputnode.dwi_preproc", "inputnode.dwi_file")],
+            ),
+        ]
+    )
+
     return workflow
     outputnode = pe.Node(
         niu.IdentityInterface(
