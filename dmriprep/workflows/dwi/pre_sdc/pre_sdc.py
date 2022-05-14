@@ -7,7 +7,6 @@ from dmriprep.workflows.dwi.pre_sdc.configurations import (
     MEAN_B0_KWARGS,
     OUTPUT_NODE_FIELDS,
 )
-from dmriprep.workflows.dwi.utils.extract_bzero import init_extract_bzero_wf
 from nipype.interfaces import mrtrix3 as mrt
 from nipype.interfaces import utility as niu
 
@@ -27,6 +26,9 @@ def init_pre_sdc_wf(ignore: list, name="pre_sdc_wf"):
         Name of workflow. Defaults to "pre_sdc_wf".
     """
     from dmriprep.config import config
+    from dmriprep.workflows.dwi.utils.extract_bzero import (
+        init_extract_bzero_wf,
+    )
 
     #: i/o
     INPUT_NODE = pe.Node(
@@ -57,7 +59,7 @@ def init_pre_sdc_wf(ignore: list, name="pre_sdc_wf"):
                     (
                         DEGIBBS_NODE,
                         EXTRACT_WF,
-                        [("out_file", "inputnode.in_file")],
+                        [("out_file", "extract_b0.in_file")],
                     ),
                     (DEGIBBS_NODE, OUTPUT_NODE, [("out_file", "dwi_pre_sdc")]),
                 ]
@@ -68,7 +70,7 @@ def init_pre_sdc_wf(ignore: list, name="pre_sdc_wf"):
                     (
                         DENOISE_NODE,
                         EXTRACT_WF,
-                        [("out_file", "inputnode.in_file")],
+                        [("out_file", "extract_b0.in_file")],
                     ),
                     (DENOISE_NODE, OUTPUT_NODE, [("out_file", "dwi_pre_sdc")]),
                 ]
@@ -81,7 +83,7 @@ def init_pre_sdc_wf(ignore: list, name="pre_sdc_wf"):
                     (
                         DEGIBBS_NODE,
                         EXTRACT_WF,
-                        [("out_file", "inputnode.in_file")],
+                        [("out_file", "extract_b0.in_file")],
                     ),
                     (DEGIBBS_NODE, OUTPUT_NODE, [("out_file", "dwi_pre_sdc")]),
                 ]
@@ -92,7 +94,7 @@ def init_pre_sdc_wf(ignore: list, name="pre_sdc_wf"):
                     (
                         INPUT_NODE,
                         EXTRACT_WF,
-                        [("dwi_file", "inputnode.in_file")],
+                        [("dwi_file", "extract_b0.in_file")],
                     ),
                     (INPUT_NODE, OUTPUT_NODE, [("dwi_file", "dwi_pre_sdc")]),
                 ]

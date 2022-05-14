@@ -1,6 +1,5 @@
 #: i/o
-INPUT_NODE_FIELDS = ["in_file"]
-OUTPUT_NODE_FIELDS = ["bzero", "mean_bzero"]
+OUTPUT_NODE_FIELDS = ["bzero", "mean_bzero", "bzero_json"]
 
 
 EXTRACT_KWARGS = dict(out_file="bzero.mif", bzero=True)

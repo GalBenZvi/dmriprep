@@ -1,33 +1,11 @@
 import nipype.pipeline.engine as pe
 from dmriprep.workflows.dwi.utils.extract_bzero.configurations import (
     EXTRACT_KWARGS,
-    INPUT_NODE_FIELDS,
     MEAN_B0_KWARGS,
     OUTPUT_NODE_FIELDS,
 )
 from nipype.interfaces import mrtrix3 as mrt
 from nipype.interfaces import utility as niu
-
-
-def init_inputnode(
-    name="inputnode", fields: list = INPUT_NODE_FIELDS
-) -> pe.Node:
-    """
-    Define the inputnode for the extract_bzero workflow.
-
-    Parameters
-    ----------
-    name : str, optional
-        Name of the inputnode. Defaults to "inputnode".
-    fields : list, optional
-        Fields to be passed to the inputnode. Defaults to INPUT_NODE_FIELDS.
-
-    Returns
-    -------
-    inputnode : nipype.pipeline.engine.Node
-        Inputnode for the extract_bzero workflow.
-    """
-    return pe.Node(niu.IdentityInterface(fields=fields), name=name)
 
 
 def init_outputnode(

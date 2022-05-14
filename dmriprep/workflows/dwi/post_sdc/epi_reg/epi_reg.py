@@ -1,25 +1,17 @@
-from dmriprep.workflows.dwi_mrtrix.pipelines.epi_reg.edges import (
+from dmriprep.workflows.dwi.post_sdc.epi_reg.edges import (
     CONVERTXFM_TO_OUTPUT_EDGES,
     EPIREG_TO_CONVERTXFM_EDGES,
     EPIREG_TO_OUTPUT_EDGES,
     INPUT_TO_EPIREG_EDGES,
 )
-from dmriprep.workflows.dwi_mrtrix.pipelines.epi_reg.nodes import (
-    CONVERTXFM_NODE,
-    EPIREG_NODE,
-    INPUT_NODE,
-    OUTPUT_NODE,
-)
-from nipype.interfaces import fsl
-from nipype.interfaces import utility as niu
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
-EPI_REG = [
-    (INPUT_NODE, EPIREG_NODE, INPUT_TO_EPIREG_EDGES),
-    (EPIREG_NODE, CONVERTXFM_NODE, EPIREG_TO_CONVERTXFM_EDGES),
-    (EPIREG_NODE, OUTPUT_NODE, EPIREG_TO_OUTPUT_EDGES),
-    (CONVERTXFM_NODE, OUTPUT_NODE, CONVERTXFM_TO_OUTPUT_EDGES),
-]
+# EPI_REG = [
+#     (INPUT_NODE, EPIREG_NODE, INPUT_TO_EPIREG_EDGES),
+#     (EPIREG_NODE, CONVERTXFM_NODE, EPIREG_TO_CONVERTXFM_EDGES),
+#     (EPIREG_NODE, OUTPUT_NODE, EPIREG_TO_OUTPUT_EDGES),
+#     (CONVERTXFM_NODE, OUTPUT_NODE, CONVERTXFM_TO_OUTPUT_EDGES),
+# ]
 
 
 def init_epireg_wf(
@@ -38,6 +30,28 @@ def init_epireg_wf(
     pe.Workflow
         An initiated workflow for coregistering EPI images to structural ones.
     """
+    from dmriprep.workflows.dwi.post_sdc.epi_reg.nodes import (
+        init_epireg_node,
+        init_inputnode,
+        init_invert_xfm_node,
+        init_outputnode,
+    )
+
     wf = Workflow(name=name)
-    wf.connect(EPI_REG)
+
+    inputnode, epireg_node, convertxfm_node, outputnode = (
+        init_inputnode(),
+        init_epireg_node(),
+        init_invert_xfm_node(),
+        init_outputnode(),
+    )
+
+    wf.connect(
+        [
+            (inputnode, epireg_node, INPUT_TO_EPIREG_EDGES),
+            (epireg_node, convertxfm_node, EPIREG_TO_CONVERTXFM_EDGES),
+            (convertxfm_node, outputnode, CONVERTXFM_TO_OUTPUT_EDGES),
+            (epireg_node, outputnode, EPIREG_TO_OUTPUT_EDGES),
+        ]
+    )
     return wf
