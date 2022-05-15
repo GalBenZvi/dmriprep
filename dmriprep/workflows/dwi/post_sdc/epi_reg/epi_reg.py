@@ -1,3 +1,6 @@
+from dmriprep.workflows.dwi.conversions.mif_to_nii.nodes import (
+    init_conversion_node,
+)
 from dmriprep.workflows.dwi.post_sdc.epi_reg.edges import (
     CONVERTXFM_TO_OUTPUT_EDGES,
     EPIREG_TO_CONVERTXFM_EDGES,
@@ -64,13 +67,29 @@ def init_epireg_wf(
         init_resample_mask_node(),
         init_apply_xfm_mask_node(),
     )
+    nii_conversion_node = init_conversion_node(is_dwi=True)
 
     wf.connect(
         [
-            (inputnode, epireg_node, INPUT_TO_EPIREG_EDGES),
-            (epireg_node, invert_xfm_node, EPIREG_TO_CONVERTXFM_EDGES),
-            (invert_xfm_node, outputnode, CONVERTXFM_TO_OUTPUT_EDGES),
-            (epireg_node, outputnode, EPIREG_TO_OUTPUT_EDGES),
+            (
+                inputnode,
+                epireg_node,
+                [
+                    ("t1w_brain", "t1_brain"),
+                    ("t1w_head", "t1_head"),
+                    ("dwi_reference", "epi"),
+                ],
+            ),
+            (epireg_node, invert_xfm_node, [("epi2str_mat", "in_file")]),
+            (invert_xfm_node, outputnode, [("out_file", "t1w_to_epi_aff")]),
+            (
+                epireg_node,
+                outputnode,
+                [
+                    ("epi2str_mat", "epi_to_t1w_aff"),
+                    ("out_file", "dwi_ref_to_t1w"),
+                ],
+            ),
             (
                 inputnode,
                 convert_xfm_node,
@@ -94,6 +113,11 @@ def init_epireg_wf(
             (inputnode, apply_xfm_dwi_node, [("dwi_file", "in_files")]),
             (apply_xfm_dwi_node, outputnode, [("out_file", "coreg_dwi")]),
             (
+                apply_xfm_dwi_node,
+                nii_conversion_node,
+                [("out_file", "in_file")],
+            ),
+            (
                 inputnode,
                 resample_mask_node,
                 [
@@ -110,6 +134,11 @@ def init_epireg_wf(
                 inputnode,
                 apply_xfm_mask_node,
                 [("t1w_mask", "in_file"), ("dwi_reference", "reference")],
+            ),
+            (
+                apply_xfm_mask_node,
+                outputnode,
+                [("out_file", "native_dwi_mask")],
             ),
         ]
     )

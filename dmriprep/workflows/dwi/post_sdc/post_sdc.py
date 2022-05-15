@@ -42,7 +42,6 @@ def init_post_sdc_wf(name: str = "post_sdc_wf") -> pe.Workflow:
     biascorrect = init_bias_correction_node()
     nii_conversion = init_conversion_node(is_dwi=True)
     extract_bzero = init_extract_bzero_wf()
-    epireg_wf = init_epireg_wf()
     # extract_bzero = init_extract_node()
     # mean_bzero = init_mean_b0_node()
     if "biascorrect" not in config.workflow.ignore:

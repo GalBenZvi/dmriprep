@@ -25,9 +25,6 @@ from pathlib import Path
 
 from dmriprep.workflows.dwi.post_sdc.epi_reg.epi_reg import init_epireg_wf
 from dmriprep.workflows.dwi.utils import _aslist, _get_wf_name
-from dmriprep.workflows.dwi.utils.outputs.reports.nodes import (
-    init_eddy_report_node,
-)
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 
@@ -103,10 +100,11 @@ def init_dwi_preproc_wf(dwi_file):
     from dmriprep.workflows.dwi.post_sdc.post_sdc import init_post_sdc_wf
     from dmriprep.workflows.dwi.pre_sdc.pre_sdc import init_pre_sdc_wf
     from dmriprep.workflows.dwi.sdc.sdc import init_sdc_wf
+    from dmriprep.workflows.dwi.utils.outputs.derivatives.derivatives import (
+        init_derivatives_wf,
+    )
     from niworkflows.engine.workflows import LiterateWorkflow as Workflow
     from niworkflows.interfaces.nibabel import ApplyMask
-
-    from .outputs import init_dwi_derivatives_wf, init_reportlets_wf
 
     dwi_file = Path(dwi_file)
     config.loggers.workflow.debug(
@@ -233,31 +231,94 @@ def init_dwi_preproc_wf(dwi_file):
             (t1w_brain, epi_reg_wf, [("out_file", "inputnode.t1w_brain")]),
         ]
     )
-    eddy_report = init_eddy_report_node()
+    derivatives_wf = init_derivatives_wf()
+    derivatives_wf.inputs.inputnode.set(
+        base_directory=config.execution.dmriprep_dir
+    )
     workflow.connect(
         [
             (
-                pre_sdc_wf,
-                eddy_report,
-                [
-                    ("outputnode.mean_bzero", "before"),
-                ],
+                inputnode,
+                derivatives_wf,
+                [("dwi_file", "inputnode.source_file")],
             ),
             (
-                sdc_wf,
-                eddy_report,
+                post_sdc_wf,
+                derivatives_wf,
                 [
-                    ("extract_bzero.outputnode.mean_bzero", "after"),
+                    (
+                        "dwi_conversion_node.out_file",
+                        "inputnode.native_dwi_file",
+                    ),
+                    (
+                        "dwi_conversion_node.json_export",
+                        "inputnode.native_dwi_json",
+                    ),
+                    (
+                        "dwi_conversion_node.out_bvec",
+                        "inputnode.native_dwi_bvec",
+                    ),
+                    (
+                        "dwi_conversion_node.out_bval",
+                        "inputnode.native_dwi_bval",
+                    ),
+                    (
+                        "dwi_conversion_node.out_grad_mrtrix",
+                        "inputnode.native_dwi_grad",
+                    ),
+                    (
+                        "extract_bzero.outputnode.bzero_json",
+                        "inputnode.native_dwiref_json",
+                    ),
+                    (
+                        "extract_bzero.outputnode.bzero_json",
+                        "inputnode.coreg_dwiref_json",
+                    ),
+                    (
+                        "extract_bzero.outputnode.mean_bzero",
+                        "inputnode.native_dwiref_file",
+                    ),
                 ],
             ),
             (
                 epi_reg_wf,
-                eddy_report,
-                [("epireg.wmseg", "wm_seg")],
+                derivatives_wf,
+                [
+                    (
+                        "dwi_conversion_node.out_file",
+                        "inputnode.coreg_dwi_file",
+                    ),
+                    (
+                        "dwi_conversion_node.json_export",
+                        "inputnode.coreg_dwi_json",
+                    ),
+                    (
+                        "dwi_conversion_node.out_bvec",
+                        "inputnode.coreg_dwi_bvec",
+                    ),
+                    (
+                        "dwi_conversion_node.out_bval",
+                        "inputnode.coreg_dwi_bval",
+                    ),
+                    (
+                        "dwi_conversion_node.out_grad_mrtrix",
+                        "inputnode.coreg_dwi_grad",
+                    ),
+                    (
+                        "outputnode.dwi_ref_to_t1w",
+                        "inputnode.coreg_dwiref_file",
+                    ),
+                    (
+                        "outputnode.native_dwi_mask",
+                        "inputnode.native_dwi_mask",
+                    ),
+                    ("outputnode.epi_to_t1w_aff", "inputnode.epi_to_t1w_aff"),
+                    ("outputnode.t1w_to_epi_aff", "inputnode.t1w_to_epi_aff"),
+                    ("outputnode.coreg_dwi_mask", "inputnode.coreg_dwi_mask"),
+                ],
             ),
         ]
     )
-
     return workflow
     dwi_derivatives_wf = init_dwi_derivatives_wf(
         output_dir=str(config.execution.output_dir)

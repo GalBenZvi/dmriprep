@@ -78,6 +78,7 @@ def init_epireg_node(name="epireg", kwargs: dict = EPIREG_KWARGS) -> pe.Node:
     """
     return pe.Node(fsl.EpiReg(**kwargs), name=name)
 
+
 def init_invert_xfm_node(
     name="invert_xfm", kwargs: dict = CONVERTXFM_KWARGS
 ) -> pe.Node:
