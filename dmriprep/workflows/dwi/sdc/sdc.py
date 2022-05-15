@@ -1,19 +1,20 @@
-import nipype.pipeline.engine as pe
-from dmriprep.workflows.dwi.sdc.configurations import (
-    INPUT_NODE_FIELDS,
-    MRCAT_KWARGS,
-    OUTPUT_NODE_FIELDS,
-    SDC_KWARGS,
-    SDC_NO_DWI_KWARGS,
-)
-from dmriprep.workflows.dwi.sdc.edges import (  # INPUT_TO_SDC_EDGES,
+from black import out
+from dmriprep.workflows.dwi.sdc.edges import (
     INPUT_TO_MERGE_EDGES,
     MERGE_TO_MRCAT_EDGES,
     MRCAT_TO_SDC_EDGES,
     SDC_TO_OUTPUT_EDGES,
 )
-from nipype.interfaces import mrtrix3 as mrt
-from nipype.interfaces import utility as niu
+from dmriprep.workflows.dwi.sdc.nodes import (
+    init_inputnode,
+    init_merge_node,
+    init_mrcat_node,
+    init_outputnode,
+    init_sdc_node,
+)
+from dmriprep.workflows.dwi.utils.extract_bzero.extract_bzero import (
+    init_extract_bzero_wf,
+)
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 
@@ -32,44 +33,23 @@ def init_sdc_wf(name="sdc_wf") -> Workflow:
         Workflow for Susceptibility Distortion Correction.
     """
     #: i/o
-    INPUT_NODE = pe.Node(
-        niu.IdentityInterface(fields=INPUT_NODE_FIELDS), name="inputnode"
+    (inputnode, outputnode, merge_node, mrcat_node, sdc_node,) = (
+        init_inputnode(),
+        init_outputnode(),
+        init_merge_node(),
+        init_mrcat_node(),
+        init_sdc_node(),
     )
-    OUTPUT_NODE = pe.Node(
-        niu.IdentityInterface(fields=OUTPUT_NODE_FIELDS), name="outputnode"
-    )
-    MERGE_NODE = pe.Node(niu.Merge(2), name="merge_dwi_series")
-    MRCAT_NODE = pe.Node(mrt.MRCat(**MRCAT_KWARGS), name="concat_dwi_series")
+    extract_bzero_wf = init_extract_bzero_wf()
     wf = Workflow(name=name)
-    # if fieldmap_is_dwi:
-    #: Building blocks
-    SDC_NODE = pe.Node(mrt.DWIPreproc(**SDC_KWARGS), name="sdc")
-    SDC_WF = [
-        (INPUT_NODE, MERGE_NODE, INPUT_TO_MERGE_EDGES),
-        (MERGE_NODE, MRCAT_NODE, MERGE_TO_MRCAT_EDGES),
-        (MRCAT_NODE, SDC_NODE, MRCAT_TO_SDC_EDGES),
-        # (INPUT_NODE, SDC_NODE, INPUT_TO_SDC_EDGES),
-    ]
-    wf.connect(SDC_WF)
-    # else:
-    #     #: Building blocks
-    #     SDC_NODE = pe.Node(mrt.DWIPreproc(**SDC_NO_DWI_KWARGS), name="sdc")
-    #     wf.connect(
-    #         [
-    #             (
-    #                 INPUT_NODE,
-    #                 MERGE_NODE,
-    #                 [("mean_bzero", "in1"), ("fmap_file", "in2")],
-    #             ),
-    #             (MERGE_NODE, MRCAT_NODE, [("out", "in_files")]),
-    #             (MRCAT_NODE, SDC_NODE, [("out_file", "in_epi")]),
-    #             (
-    #                 INPUT_NODE,
-    #                 SDC_NODE,
-    #                 [("dwi_file", "in_file"), ("dwi_pe_dir", "pe_dir")],
-    #             ),
-    #         ]
-    #     )
-
-    wf.connect([(SDC_NODE, OUTPUT_NODE, SDC_TO_OUTPUT_EDGES)])
+    wf.connect(
+        [
+            (inputnode, merge_node, INPUT_TO_MERGE_EDGES),
+            (merge_node, mrcat_node, MERGE_TO_MRCAT_EDGES),
+            (mrcat_node, sdc_node, MRCAT_TO_SDC_EDGES),
+            (sdc_node, outputnode, SDC_TO_OUTPUT_EDGES),
+            (sdc_node, extract_bzero_wf, [("out_file", "extract_b0.in_file")]),
+            # (extract_bzero_wf,outputnode,[("")])
+        ]
+    )
     return wf
