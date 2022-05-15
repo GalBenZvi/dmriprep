@@ -1,7 +1,18 @@
 import nipype.pipeline.engine as pe
-from dmriprep.workflows.dwi.post_sdc.edges import (
-    BIASCORRECT_TO_NII_EDGES,
-    INPUT_TO_BIASCORRECT_EDGES,
+from dmriprep.config import config
+from dmriprep.workflows.dwi.conversions.mif_to_nii.nodes import (
+    init_conversion_node,
+)
+from dmriprep.workflows.dwi.post_sdc.bias_correction import (
+    init_bias_correction_node,
+)
+from dmriprep.workflows.dwi.post_sdc.epi_reg.epi_reg import init_epireg_wf
+from dmriprep.workflows.dwi.post_sdc.nodes import (
+    init_inputnode,
+    init_outputnode,
+)
+from dmriprep.workflows.dwi.utils.extract_bzero.extract_bzero import (
+    init_extract_bzero_wf,
 )
 
 
@@ -19,18 +30,6 @@ def init_post_sdc_wf(name: str = "post_sdc_wf") -> pe.Workflow:
     post_sdc_wf : nipype.pipeline.engine.Workflow
         Post-SDC workflow.
     """
-    from dmriprep.config import config
-    from dmriprep.workflows.dwi.conversions.mif_to_nii.nodes import (
-        init_conversion_node,
-    )
-    from dmriprep.workflows.dwi.post_sdc.bias_correction import (
-        init_bias_correction_node,
-    )
-    from dmriprep.workflows.dwi.post_sdc.epi_reg.epi_reg import init_epireg_wf
-    from dmriprep.workflows.dwi.post_sdc.nodes import init_inputnode
-    from dmriprep.workflows.dwi.utils.extract_bzero.extract_bzero import (
-        init_extract_bzero_wf,
-    )
 
     # from dmriprep.workflows.dwi.utils.extract_bzero.nodes import (
     #     init_extract_node,
@@ -39,6 +38,7 @@ def init_post_sdc_wf(name: str = "post_sdc_wf") -> pe.Workflow:
 
     wf = pe.Workflow(name=name)
     inputnode = init_inputnode()
+    outputnode = init_outputnode()
     biascorrect = init_bias_correction_node()
     nii_conversion = init_conversion_node(is_dwi=True)
     extract_bzero = init_extract_bzero_wf()
@@ -48,39 +48,48 @@ def init_post_sdc_wf(name: str = "post_sdc_wf") -> pe.Workflow:
     if "biascorrect" not in config.workflow.ignore:
         wf.connect(
             [
-                (inputnode, biascorrect, INPUT_TO_BIASCORRECT_EDGES),
-                (biascorrect, nii_conversion, BIASCORRECT_TO_NII_EDGES),
+                (inputnode, biascorrect, [("dwi_file", "in_file")]),
+                (biascorrect, nii_conversion, [("out_file", "in_file")]),
                 (
                     biascorrect,
                     extract_bzero,
                     [("out_file", "extract_b0.in_file")],
                 ),
+                (biascorrect, outputnode, [("out_file", "dwi_mif")]),
             ]
         )
     else:
         wf.connect(
             [
-                (inputnode, nii_conversion, INPUT_TO_BIASCORRECT_EDGES),
+                (inputnode, nii_conversion, [("dwi_file", "in_file")]),
                 (
                     inputnode,
                     extract_bzero,
                     [("dwi_file", "extract_b0.in_file")],
                 ),
+                (inputnode, outputnode, [("dwi_file", "dwi_mif")]),
             ]
         )
     wf.connect(
         [
             (
                 extract_bzero,
-                epireg_wf,
-                [("outputnode.mean_bzero", "inputnode.in_file")],
+                outputnode,
+                [
+                    ("outputnode.mean_bzero", "mean_bzero"),
+                    ("outputnode.bzero", "bzero"),
+                    ("outputnode.bzero_json", "bzero_json"),
+                ],
             ),
             (
-                inputnode,
-                epireg_wf,
+                nii_conversion,
+                outputnode,
                 [
-                    ("t1w_head", "inputnode.t1w_head"),
-                    ("t1w_brain", "inputnode.t1w_brain"),
+                    ("out_file", "dwi_nii"),
+                    ("out_bvec", "dwi_bvec"),
+                    ("out_bval", "dwi_bval"),
+                    ("json_export", "dwi_json"),
+                    ("out_grad_mrtrix", "dwi_grad"),
                 ],
             ),
         ]

@@ -23,6 +23,7 @@
 """Orchestrating the dMRI-preprocessing workflow."""
 from pathlib import Path
 
+from dmriprep.workflows.dwi.post_sdc.epi_reg.epi_reg import init_epireg_wf
 from dmriprep.workflows.dwi.utils import _aslist, _get_wf_name
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
@@ -214,13 +215,23 @@ def init_dwi_preproc_wf(dwi_file):
     post_sdc_wf = init_post_sdc_wf()
     workflow.connect(
         [
-            (inputnode, post_sdc_wf, [("t1w_preproc", "inputnode.t1w_head")]),
-            (t1w_brain, post_sdc_wf, [("out_file", "inputnode.t1w_brain")]),
             (
                 sdc_wf,
                 post_sdc_wf,
                 [("outputnode.dwi_preproc", "inputnode.dwi_file")],
             ),
+        ]
+    )
+    epi_reg_wf = init_epireg_wf()
+    workflow.connect(
+        [
+            (
+                post_sdc_wf,
+                epi_reg_wf,
+                [("outputnode.mean_bzero", "inputnode.in_file")],
+            ),
+            (inputnode, epi_reg_wf, [("t1w_preproc", "inputnode.t1w_head")]),
+            (t1w_brain, epi_reg_wf, [("out_file", "inputnode.t1w_brain")]),
         ]
     )
 

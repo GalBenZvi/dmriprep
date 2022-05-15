@@ -22,3 +22,21 @@ def init_inputnode(
         Input node.
     """
     return pe.Node(niu.IdentityInterface(fields=fields), name=name)
+
+
+def init_outputnode(
+    name: str = "outputnode", fields: list = OUTPUT_NODE_FIELDS
+) -> pe.Node:
+    """
+    Output node
+
+    Parameters
+    ----------
+    name : str, optional
+
+    Returns
+    -------
+    outputnode : nipype.pipeline.engine.Node
+        Output node.
+    """
+    return pe.Node(niu.IdentityInterface(fields=fields), name=name)

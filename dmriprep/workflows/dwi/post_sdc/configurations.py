@@ -1,8 +1,13 @@
 #: i/o
-INPUT_NODE_FIELDS = ["dwi_file", "t1w_brain", "t1w_head"]
+INPUT_NODE_FIELDS = ["dwi_file"]
 OUTPUT_NODE_FIELDS = [
-    "dwi_file",
-    "epi_to_t1w_aff",
-    "t1w_to_epi_aff",
-    "epi_to_t1w",
+    "dwi_mif",
+    "dwi_nii",
+    "dwi_bval",
+    "dwi_bvec",
+    "dwi_grad",
+    "dwi_json",
+    "bzero",
+    "mean_bzero",
+    "bzero_json",
 ]
