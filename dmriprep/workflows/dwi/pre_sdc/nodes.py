@@ -10,16 +10,88 @@ from dmriprep.workflows.dwi.pre_sdc.configurations import (
 from nipype.interfaces import mrtrix3 as mrt
 from nipype.interfaces import utility as niu
 
-#: i/o
-INPUT_NODE = pe.Node(
-    niu.IdentityInterface(fields=INPUT_NODE_FIELDS), name="inputnode"
-)
-OUTPUT_NODE = pe.Node(
-    niu.IdentityInterface(fields=OUTPUT_NODE_FIELDS), name="outputnode"
-)
 
-#: Building blocks
-DENOISE_NODE = pe.Node(mrt.DWIDenoise(**DENOISE_KWARGS), name="denoise")
-DEGIBBS_NODE = pe.Node(mrt.MRDeGibbs(**DEGIBBS_KWARGS), name="degibbs")
-EXTRACT_NODE = pe.Node(mrt.DWIExtract(**EXTRACT_KWARGS), name="extract_b0")
-MEAN_B0_NODE = pe.Node(mrt.MRMath(**MEAN_B0_KWARGS), name="mean_b0")
+def init_inputnode(
+    name: str = "inputnode", fields=INPUT_NODE_FIELDS
+) -> pe.Node:
+    """
+    Initialize the input node for the pre_sdc workflow.
+
+    Parameters
+    ----------
+    name : str, optional
+        Name of node. Defaults to "inputnode".
+    fields : list, optional
+        Fields of node. Defaults to INPUT_NODE_FIELDS.
+
+    Returns
+    -------
+    Node
+        Input node for the pre_sdc workflow.
+    """
+    return pe.Node(niu.IdentityInterface(fields=fields), name=name)
+
+
+def init_outputnode(
+    name: str = "outputnode", fields=OUTPUT_NODE_FIELDS
+) -> pe.Node:
+    """
+    Initialize the output node for the pre_sdc workflow.
+
+    Parameters
+    ----------
+    name : str, optional
+        Name of node. Defaults to "outputnode".
+    fields : list, optional
+        Fields of node. Defaults to OUTPUT_NODE_FIELDS.
+
+    Returns
+    -------
+    Node
+        Output node for the pre_sdc workflow.
+    """
+    return pe.Node(niu.IdentityInterface(fields=fields), name=name)
+
+
+def init_denoise_node(
+    name: str = "denoise",
+    kwargs: dict = DENOISE_KWARGS,
+) -> pe.Node:
+    """
+    Initialize the denoise node for the pre_sdc workflow.
+
+    Parameters
+    ----------
+    name : str, optional
+        Name of node. Defaults to "denoise".
+    kwargs : dict, optional
+        Keyword arguments for the denoise node. Defaults to DENOISE_KWARGS.
+
+    Returns
+    -------
+    Node
+        Denoise node for the pre_sdc workflow.
+    """
+    return pe.Node(mrt.DWIDenoise(**kwargs), name=name)
+
+
+def init_degibbss_node(
+    name: str = "degibbs",
+    kwargs: dict = DEGIBBS_KWARGS,
+) -> pe.Node:
+    """
+    Initialize the degibss node for the pre_sdc workflow.
+
+    Parameters
+    ----------
+    name : str, optional
+        Name of node. Defaults to "degibbs".
+    kwargs : dict, optional
+        Keyword arguments for the degibss node. Defaults to DEGIBBS_KWARGS.
+
+    Returns
+    -------
+    Node
+        Degibss node for the pre_sdc workflow.
+    """
+    return pe.Node(mrt.MRDeGibbs(**kwargs), name=name)
