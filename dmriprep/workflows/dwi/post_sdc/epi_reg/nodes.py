@@ -3,12 +3,17 @@ Nodes' configurations for *epi_eg* pipelines.
 """
 import nipype.pipeline.engine as pe
 from dmriprep.workflows.dwi.post_sdc.epi_reg.configurations import (
+    APPLY_XFM_MASK_KWARGS,
     CONVERTXFM_KWARGS,
+    DWI_APPLY_XFM_KWARGS,
     EPIREG_KWARGS,
     INPUT_NODE_FIELDS,
     OUTPUT_NODE_FIELDS,
+    RESAMPLE_MASK_KWARGS,
+    TRANSFORM_AFF_KWARGS,
 )
-from nipype.interfaces import fsl
+from nipype.interfaces import ants, fsl
+from nipype.interfaces import mrtrix3 as mrt
 from nipype.interfaces import utility as niu
 
 
@@ -93,3 +98,87 @@ def init_invert_xfm_node(
         *invert_xfm* node.
     """
     return pe.Node(fsl.ConvertXFM(**kwargs), name=name)
+
+
+def init_fsl_to_mrtrix_xfm_node(
+    name="fsl_to_mrtrix_xfm", kwargs: dict = TRANSFORM_AFF_KWARGS
+) -> pe.Node:
+    """
+    Initialize the *fsl_to_mrtrix_xfm* node for the *epi_reg* workflow.
+
+    Parameters
+    ----------
+    name : str, optional
+        Name of the node, by default "fsl_to_mrtrix_xfm"
+    kwargs : dict, optional
+        Keyword arguments for the node, by default CONVERTXFM_KWARGS
+
+    Returns
+    -------
+    pe.Node
+        *fsl_to_mrtrix_xfm* node.
+    """
+    return pe.Node(mrt.TransformFSLConvert(**kwargs), name=name)
+
+
+def init_apply_xfm_node(
+    name="apply_xfm", kwargs: dict = DWI_APPLY_XFM_KWARGS
+) -> pe.Node:
+    """
+    Initialize the *apply_xfm* node for the *epi_reg* workflow.
+
+    Parameters
+    ----------
+    name : str, optional
+        Name of the node, by default "apply_xfm"
+    kwargs : dict, optional
+        Keyword arguments for the node, by default DWI_APPLY_XFM_KWARGS
+
+    Returns
+    -------
+    pe.Node
+        *apply_xfm* node.
+    """
+    return pe.Node(mrt.MRTransform(**kwargs), name=name)
+
+
+def init_resample_mask_node(
+    name="resample_mask", kwargs: dict = RESAMPLE_MASK_KWARGS
+) -> pe.Node:
+    """
+    Initialize the *resample_mask* node for the *epi_reg* workflow.
+
+    Parameters
+    ----------
+    name : str, optional
+        Name of the node, by default "resample_mask"
+    kwargs : dict, optional
+        Keyword arguments for the node, by default RESAMPLE_MASK_KWARGS
+
+    Returns
+    -------
+    pe.Node
+        *resample_mask* node.
+    """
+    return pe.Node(ants.ApplyTransforms(**kwargs), name=name)
+
+
+def init_apply_xfm_mask_node(
+    name="apply_xfm_mask", kwargs: dict = APPLY_XFM_MASK_KWARGS
+) -> pe.Node:
+    """
+    Initialize the *apply_xfm_mask* node for the *epi_reg* workflow.
+
+    Parameters
+    ----------
+    name : str, optional
+        Name of the node, by default "apply_xfm_mask"
+    kwargs : dict, optional
+        Keyword arguments for the node, by default DWI_APPLY_XFM_KWARGS
+
+    Returns
+    -------
+    pe.Node
+        *apply_xfm_mask* node.
+    """
+    return pe.Node(fsl.ApplyXFM(**kwargs), name=name)
