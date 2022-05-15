@@ -228,9 +228,19 @@ def init_dwi_preproc_wf(dwi_file):
             (
                 post_sdc_wf,
                 epi_reg_wf,
-                [("outputnode.mean_bzero", "inputnode.in_file")],
+                [
+                    ("outputnode.mean_bzero", "inputnode.dwi_reference"),
+                    ("outputnode.dwi_mif", "inputnode.dwi_file"),
+                ],
             ),
-            (inputnode, epi_reg_wf, [("t1w_preproc", "inputnode.t1w_head")]),
+            (
+                inputnode,
+                epi_reg_wf,
+                [
+                    ("t1w_preproc", "inputnode.t1w_head"),
+                    ("t1w_mask", "inputnode.t1w_mask"),
+                ],
+            ),
             (t1w_brain, epi_reg_wf, [("out_file", "inputnode.t1w_brain")]),
         ]
     )
