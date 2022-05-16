@@ -27,6 +27,7 @@ NATIVE_DWI_KWARGS = dict(
     desc="preproc",
     suffix="dwi",
     compress=None,
+    dismiss_entities=["direction"],
 )
 COREG_DWI_KWARGS = dict(
     datatype="dwi",
@@ -34,6 +35,7 @@ COREG_DWI_KWARGS = dict(
     desc="preproc",
     suffix="dwi",
     compress=None,
+    dismiss_entities=["direction"],
 )
 NATIVE_DWIREF_KWARGS = dict(
     datatype="dwi",
@@ -41,6 +43,7 @@ NATIVE_DWIREF_KWARGS = dict(
     desc="preproc",
     suffix="dwiref",
     compress=None,
+    dismiss_entities=["direction"],
 )
 COREG_DWIREF_KWARGS = dict(
     datatype="dwi",
@@ -48,6 +51,7 @@ COREG_DWIREF_KWARGS = dict(
     desc="preproc",
     suffix="dwiref",
     compress=None,
+    dismiss_entities=["direction"],
 )
 EPI_TO_T1_AFF_KWARGS = dict(
     datatype="dwi",
@@ -55,6 +59,7 @@ EPI_TO_T1_AFF_KWARGS = dict(
     extension=".txt",
     to="T1w",
     compress=False,
+    dismiss_entities=["direction"],
 )
 EPI_TO_T1_AFF_KWARGS["from"] = "dwi"
 
@@ -64,6 +69,7 @@ T1_to_EPI_AFF_KWARGS = dict(
     extension=".txt",
     to="dwi",
     compress=False,
+    dismiss_entities=["direction"],
 )
 T1_to_EPI_AFF_KWARGS["from"] = "T1w"
 
@@ -73,6 +79,7 @@ NATIVE_DWI_MASK_KWARGS = dict(
     desc="brain",
     space="dwi",
     compress=None,
+    dismiss_entities=["direction"],
     # dismiss_entities=["direction"],
 )
 COREG_DWI_MASK_KWARGS = dict(
@@ -81,5 +88,6 @@ COREG_DWI_MASK_KWARGS = dict(
     desc="brain",
     space="T1w",
     compress=None,
+    dismiss_entities=["direction"],
     # dismiss_entities=["direction"],
 )

@@ -1,3 +1,4 @@
+from dmriprep.workflows.dwi.pre_sdc.pre_sdc import init_pre_sdc_wf
 from dmriprep.workflows.dwi.sdc.edges import (
     INPUT_TO_MERGE_EDGES,
     MERGE_TO_MRCAT_EDGES,
@@ -44,10 +45,15 @@ def init_sdc_wf(name="sdc_wf") -> Workflow:
     )
     eddy_report = init_eddy_report_node()
     extract_bzero_wf = init_extract_bzero_wf()
+    # fmap_denoising_wf = init_pre_sdc_wf(name="denoise_fmap")
     wf = Workflow(name=name)
     wf.connect(
         [
-            (inputnode, merge_node, INPUT_TO_MERGE_EDGES),
+            (
+                inputnode,
+                merge_node,
+                [("dwi_file", "in1"), ("fmap_file", "in2")],
+            ),
             (merge_node, mrcat_node, MERGE_TO_MRCAT_EDGES),
             (mrcat_node, sdc_node, MRCAT_TO_SDC_EDGES),
             (sdc_node, outputnode, SDC_TO_OUTPUT_EDGES),

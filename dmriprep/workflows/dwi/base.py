@@ -233,7 +233,7 @@ def init_dwi_preproc_wf(dwi_file):
     )
     derivatives_wf = init_derivatives_wf()
     derivatives_wf.inputs.inputnode.set(
-        base_directory=config.execution.dmriprep_dir
+        base_directory=config.execution.output_dir
     )
     workflow.connect(
         [

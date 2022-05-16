@@ -8,24 +8,6 @@ from dmriprep.workflows.dwi.utils.outputs.derivatives.configurations import (
     NATIVE_DWIREF_KWARGS,
     T1_to_EPI_AFF_KWARGS,
 )
-from dmriprep.workflows.dwi.utils.outputs.derivatives.edges import (
-    COREG_DWI_LIST_TO_DDS_EDGES,
-    COREG_DWIREF_LIST_TO_DDS_EDGES,
-    INPUT_TO_COREG_DWI_DDS_EDGES,
-    INPUT_TO_COREG_DWI_LIST_EDGES,
-    INPUT_TO_COREG_DWI_MASK_EDGES,
-    INPUT_TO_COREG_DWIREF_DDS_EDGES,
-    INPUT_TO_COREG_DWIREF_LIST_EDGES,
-    INPUT_TO_EPI_TO_T1_EDGES,
-    INPUT_TO_NATIVE_DWI_DDS_EDGES,
-    INPUT_TO_NATIVE_DWI_LIST_EDGES,
-    INPUT_TO_NATIVE_DWI_MASK_EDGES,
-    INPUT_TO_NATIVE_DWIREF_DDS_EDGES,
-    INPUT_TO_NATIVE_DWIREF_LIST_EDGES,
-    INPUT_TO_T1_TO_EPI_EDGES,
-    NATIVE_DWI_LIST_TO_DDS_EDGES,
-    NATIVE_DWIREF_LIST_TO_DDS_EDGES,
-)
 from dmriprep.workflows.dwi.utils.outputs.derivatives.nodes import (
     init_dwi_dds_node,
     init_dwi_list_node,
