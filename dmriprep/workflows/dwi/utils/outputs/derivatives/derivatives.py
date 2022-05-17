@@ -96,6 +96,7 @@ def init_derivatives_wf(name="dmri_derivatives_wf") -> Workflow:
                     ("coreg_dwi_json", "in2"),
                     ("coreg_dwi_bvec", "in3"),
                     ("coreg_dwi_bval", "in4"),
+                    ("coreg_dwi_grad", "in5"),
                 ],
             ),
             (

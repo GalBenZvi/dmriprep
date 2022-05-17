@@ -23,12 +23,14 @@
 """Orchestrating the dMRI-preprocessing workflow."""
 from pathlib import Path
 
+from dmriprep.interfaces import DerivativesDataSink
 from dmriprep.workflows.dwi.post_sdc.epi_reg.epi_reg import init_epireg_wf
 from dmriprep.workflows.dwi.utils import _aslist, _get_wf_name
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 
 from ... import config
+from .outputs import init_reportlets_wf
 
 
 def init_dwi_preproc_wf(dwi_file):
@@ -164,6 +166,15 @@ def init_dwi_preproc_wf(dwi_file):
         ]
     )
     sdc_wf = init_sdc_wf()
+    ds_report_eddy = pe.Node(
+        DerivativesDataSink(
+            base_directory=str(config.execution.output_dir),
+            desc="eddy",
+            datatype="figures",
+        ),
+        name="ds_report_eddy",
+        run_without_submitting=True,
+    )
     workflow.connect(
         [
             (
@@ -186,6 +197,8 @@ def init_dwi_preproc_wf(dwi_file):
                 sdc_wf,
                 [("outputnode.fmap_file", "inputnode.fmap_file")],
             ),
+            (inputnode, ds_report_eddy, [("dwi_file", "source_file")]),
+            (sdc_wf, ds_report_eddy, [("eddy_report.out_report", "in_file")]),
         ]
     )
 
@@ -319,80 +332,43 @@ def init_dwi_preproc_wf(dwi_file):
             ),
         ]
     )
-    return workflow
-    dwi_derivatives_wf = init_dwi_derivatives_wf(
-        output_dir=str(config.execution.output_dir)
-    )
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, eddy_wf, [("dwi_file", "inputnode.dwi_file"),
-                                ("in_bvec", "inputnode.in_bvec"),
-                                ("in_bval", "inputnode.in_bval")]),
-        (inputnode, ds_report_eddy, [("dwi_file", "source_file")]),
-        (brainextraction_wf, eddy_wf, [("outputnode.out_mask", "inputnode.dwi_mask")]),
-        (brainextraction_wf, eddy_report, [("outputnode.out_file", "before")]),
-        (eddy_wf, eddy_report, [("outputnode.eddy_ref_image", "after")]),
-        (eddy_report, ds_report_eddy, [("out_report", "in_file")]),
-    ])
-    # fmt:on
-
-    # REPORTING ############################################################
     reportlets_wf = init_reportlets_wf(
         str(config.execution.output_dir),
-        sdc_report=has_fieldmap,
+        sdc_report=True,
     )
-    # fmt: off
-    workflow.connect([
-        (inputnode, reportlets_wf, [("dwi_file", "inputnode.source_file")]),
-        (dwi_reference_wf, reportlets_wf, [
-            ("outputnode.validation_report", "inputnode.validation_report"),
-        ]),
-        (outputnode, reportlets_wf, [
-            ("dwi_reference", "inputnode.dwi_ref"),
-            ("dwi_mask", "inputnode.dwi_mask"),
-        ]),
-    ])
-    # fmt: on
-
-    if not has_fieldmap:
-        # fmt: off
-        workflow.connect([
-            (brainextraction_wf, buffernode, [
-                ("outputnode.out_file", "dwi_reference"),
-                ("outputnode.out_mask", "dwi_mask"),
-            ]),
-        ])
-        # fmt: on
-        return workflow
-
-    from niworkflows.interfaces.utility import KeySelect
-    from sdcflows.workflows.apply.correction import init_unwarp_wf
-    from sdcflows.workflows.apply.registration import init_coeff2epi_wf
-
-    coeff2epi_wf = init_coeff2epi_wf(
-        debug="fieldmaps" in config.execution.debug,
-        omp_nthreads=config.nipype.omp_nthreads,
-        write_coeff=True,
+    workflow.connect(
+        [
+            (
+                inputnode,
+                reportlets_wf,
+                [
+                    ("dwi_file", "inputnode.source_file"),
+                    ("t1w_preproc", "inputnode.t1w_head"),
+                ],
+            ),
+            (
+                post_sdc_wf,
+                reportlets_wf,
+                [
+                    (
+                        "extract_bzero.outputnode.mean_bzero",
+                        "inputnode.dwi_ref",
+                    ),
+                ],
+            ),
+            (
+                epi_reg_wf,
+                reportlets_wf,
+                [
+                    ("outputnode.native_dwi_mask", "inputnode.dwi_mask"),
+                    ("outputnode.dwi_ref_to_t1w", "inputnode.coreg_dwi_ref"),
+                ],
+            ),
+            (
+                sdc_wf,
+                reportlets_wf,
+                [("eddy_report.out_report", "inputnode.sdc_report")],
+            ),
+        ]
     )
-
-    (
-        unwarp_wf,
-        sdc_report,
-        [
-            ("outputnode.corrected", "after"),
-            ("outputnode.corrected_mask", "wm_seg"),
-        ],
-    ),
-    (sdc_report, reportlets_wf, [("out_report", "inputnode.sdc_report")]),
-    (
-        unwarp_wf,
-        buffernode,
-        [
-            ("outputnode.corrected", "dwi_reference"),
-            ("outputnode.corrected_mask", "dwi_mask"),
-        ],
-    ),
-    # fmt: on
-
     return workflow
