@@ -218,7 +218,7 @@ def _build_parser():
         action="store",
         nargs="+",
         default=[],
-        choices=["fieldmaps", "sbref", "eddy"],
+        choices=["fieldmaps", "sbref", "eddy", "degibbs", "denoise"],
         help="ignore selected aspects of the input dataset to disable corresponding "
         "parts of the workflow (a space delimited list)",
     )

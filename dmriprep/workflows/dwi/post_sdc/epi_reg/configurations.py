@@ -27,7 +27,10 @@ APPLY_XFM_MASK_KWARGS = dict(
     apply_xfm=True, interp="nearestneighbour", out_file="mask.nii.gz"
 )
 RESAMPLE_MASK_KWARGS = dict(
-    interpolation="NearestNeighbor",
-    output_image="mask.nii.gz",
-    transforms="identity",
+    interpolation="nearest", out_file="resampled.nii.gz"
 )
+# RESAMPLE_MASK_KWARGS = dict(
+#     interpolation="NearestNeighbor",
+#     output_image="mask.nii.gz",
+#     transforms="identity",
+# )

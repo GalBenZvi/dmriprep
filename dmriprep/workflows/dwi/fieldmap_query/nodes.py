@@ -8,6 +8,28 @@ from dmriprep.workflows.dwi.fieldmap_query.configurations import (
 from nipype.interfaces import utility as niu
 
 
+def is_same_size(fmap: str, dwi: str):
+    """
+    Checks if the fieldmap and the DWI are of the same size
+    """
+    from pathlib import Path
+
+    import numpy as np
+    import pandas as pd
+
+    fmap, dwi = Path(fmap), Path(dwi)
+    fmap_bval_file, dwi_bval_file = [
+        f.parent / f"{f.name.split('.')[0]}.bval" for f in [fmap, dwi]
+    ]
+    fmap_bval, dwi_bval = [
+        pd.read_csv(bval_file, sep=" ", header=None).values[0]
+        for bval_file in [fmap_bval_file, dwi_bval_file]
+    ]
+    return np.count_nonzero(fmap_bval < 100) == np.count_nonzero(
+        dwi_bval < 100
+    )
+
+
 def locate_opposite_phase(dwi_file: str):
     """
     Locates

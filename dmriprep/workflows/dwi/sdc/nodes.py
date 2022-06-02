@@ -102,6 +102,7 @@ def init_sdc_node(name="sdc", kwargs=SDC_KWARGS) -> pe.Node:
     """
     return pe.Node(mrt.DWIPreproc(**kwargs), name=name)
 
+
 # ds_report_eddy = pe.Node(
 #     DerivativesDataSink(
 #         base_directory=str(config.execution.output_dir),

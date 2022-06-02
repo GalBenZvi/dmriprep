@@ -57,15 +57,12 @@ DWI_TEMPLATE = """\
 \t\t<details open>
 \t\t<summary>Summary</summary>
 \t\t<ul class="elem-desc">
-\t\t\t<li>Original orientation: {ornt}</li>
 \t\t\t<li>Phase-encoding (PE) direction: {pedir}</li>
 \t\t\t<li>Susceptibility distortion correction: {sdc}</li>
 \t\t\t<li>Registration: {registration}</li>
 \t\t</ul>
 \t\t</details>
 \t\t<details>
-\t\t\t<summary>Confounds collected</summary><br />
-\t\t\t<p>{confounds}.</p>
 \t\t</details>
 """
 
@@ -183,20 +180,9 @@ class DwiSummaryInputSpec(BaseInterfaceInputSpec):
     registration_dof = traits.Enum(
         6, 9, 12, desc="Registration degrees of freedom", mandatory=True
     )
-    registration_init = traits.Enum(
-        "register",
-        "header",
-        mandatory=True,
-        desc='Whether to initialize registration with the "header"'
-        ' or by centering the volumes ("register")',
-    )
-    confounds_file = File(exists=True, desc="Confounds file")
-    orientation = traits.Str(
-        mandatory=True, desc="Orientation of the voxel axes"
-    )
 
 
-class FunctionalSummary(SummaryInterface):
+class DWISummary(SummaryInterface):
     input_spec = DwiSummaryInputSpec
 
     def _generate_segment(self):
@@ -214,20 +200,16 @@ class FunctionalSummary(SummaryInterface):
             ],
         }[self.inputs.registration][self.inputs.fallback]
 
-        pedir = get_world_pedir(
-            self.inputs.orientation, self.inputs.pe_direction
-        )
+        pedir = self.inputs.pe_direction
 
-        if isdefined(self.inputs.confounds_file):
-            with open(self.inputs.confounds_file) as cfh:
-                conflist = cfh.readline().strip("\n").strip()
+        # if isdefined(self.inputs.confounds_file):
+        #     with open(self.inputs.confounds_file) as cfh:
+        #         conflist = cfh.readline().strip("\n").strip()
 
         return DWI_TEMPLATE.format(
             pedir=pedir,
             sdc=self.inputs.distortion_correction,
             registration=reg,
-            confounds=re.sub(r"[\t ]+", ", ", conflist),
-            ornt=self.inputs.orientation,
         )
 
 

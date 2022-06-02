@@ -1,6 +1,5 @@
-from dmriprep.workflows.dwi.pre_sdc.pre_sdc import init_pre_sdc_wf
+from dmriprep.workflows.dwi.sdc.configurations import SDC_NO_DWI_KWARGS
 from dmriprep.workflows.dwi.sdc.edges import (
-    INPUT_TO_MERGE_EDGES,
     MERGE_TO_MRCAT_EDGES,
     MRCAT_TO_SDC_EDGES,
     SDC_TO_OUTPUT_EDGES,
@@ -21,7 +20,7 @@ from dmriprep.workflows.dwi.utils.outputs.reports.nodes import (
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 
-def init_sdc_wf(name="sdc_wf") -> Workflow:
+def init_sdc_wf(is_seepi: bool, name="sdc_wf") -> Workflow:
     """
     Workflow for Susceptibility Distortion Correction.
 
@@ -41,26 +40,53 @@ def init_sdc_wf(name="sdc_wf") -> Workflow:
         init_outputnode(),
         init_merge_node(),
         init_mrcat_node(),
-        init_sdc_node(),
+        init_sdc_node(kwargs=SDC_NO_DWI_KWARGS),
     )
     eddy_report = init_eddy_report_node()
-    extract_bzero_wf = init_extract_bzero_wf()
-    # fmap_denoising_wf = init_pre_sdc_wf(name="denoise_fmap")
+    fmap_b0_wf = init_extract_bzero_wf(name="fmap_b0_sdc")
+    extract_bzero_after_wf = init_extract_bzero_wf(name="b0_after_sdc")
     wf = Workflow(name=name)
+    if is_seepi:
+        wf.connect(
+            [
+                (
+                    inputnode,
+                    merge_node,
+                    [("dwi_bzero", "in1")],
+                ),
+                (fmap_b0_wf, merge_node, [("outputnode.bzero", "in2")]),
+            ]
+        )
+    else:
+        wf.connect(
+            [
+                (
+                    inputnode,
+                    merge_node,
+                    [("mean_bzero", "in1")],
+                ),
+                (fmap_b0_wf, merge_node, [("outputnode.mean_bzero", "in2")]),
+            ]
+        )
     wf.connect(
         [
-            (
-                inputnode,
-                merge_node,
-                [("dwi_file", "in1"), ("fmap_file", "in2")],
-            ),
+            (inputnode, fmap_b0_wf, [("fmap_file", "extract_b0.in_file")]),
             (merge_node, mrcat_node, MERGE_TO_MRCAT_EDGES),
             (mrcat_node, sdc_node, MRCAT_TO_SDC_EDGES),
+            (
+                inputnode,
+                sdc_node,
+                [("dwi_file", "in_file"), ("dwi_pe_dir", "pe_dir")],
+            ),
             (sdc_node, outputnode, SDC_TO_OUTPUT_EDGES),
-            (sdc_node, extract_bzero_wf, [("out_file", "extract_b0.in_file")]),
+            (
+                sdc_node,
+                extract_bzero_after_wf,
+                [("out_file", "extract_b0.in_file")],
+            ),
             (inputnode, eddy_report, [("mean_bzero", "before")]),
             (
-                extract_bzero_wf,
+                extract_bzero_after_wf,
                 eddy_report,
                 [("outputnode.mean_bzero", "after")],
             ),

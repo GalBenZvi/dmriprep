@@ -66,7 +66,7 @@ def init_dmriprep_wf():
     from niworkflows.interfaces.bids import BIDSFreeSurferDir
 
     ver = Version(config.environment.version)
-
+    config.execution.dmriprep_dir = Path(config.execution.output_dir) / "dmriprep"
     dmriprep_wf = Workflow(name=f"dmriprep_{ver.major}_{ver.minor}_wf")
     dmriprep_wf.base_dir = config.execution.work_dir
 
@@ -109,14 +109,10 @@ def init_dmriprep_wf():
             dmriprep_wf.add_nodes([single_subject_wf])
 
         # Dump a copy of the config file into the log directory
-        log_dir = (
-            Path(config.execution.dmriprep_dir)
-            / f"sub-{subject_id}"
-            / "log"
-            / config.execution.run_uuid
-        )
+        log_dir = config.execution.dmriprep_dir / f"sub-{subject_id}" / "log" / config.execution.run_uuid
+        
         log_dir.mkdir(exist_ok=True, parents=True)
-        config.to_filename(log_dir / "dmriprep.toml")
+        config.to_filename(str(log_dir / "dmriprep.toml"))
 
     return dmriprep_wf
 

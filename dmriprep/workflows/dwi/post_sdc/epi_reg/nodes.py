@@ -12,7 +12,8 @@ from dmriprep.workflows.dwi.post_sdc.epi_reg.configurations import (
     RESAMPLE_MASK_KWARGS,
     TRANSFORM_AFF_KWARGS,
 )
-from nipype.interfaces import ants, fsl
+from dmriprep.workflows.dwi.post_sdc.epi_reg.interfaces import nilearn
+from nipype.interfaces import fsl
 from nipype.interfaces import mrtrix3 as mrt
 from nipype.interfaces import utility as niu
 
@@ -142,6 +143,31 @@ def init_apply_xfm_node(
     return pe.Node(mrt.MRTransform(**kwargs), name=name)
 
 
+def resample_mask_func(source: str, target: str) -> str:
+    """
+    Function to resample *mask* to a target.
+    Relies on nilearn's resample_to_image and nibabel.
+
+    Parameters
+    ----------
+    source : str
+        Source file.
+    target : str
+        Target file.
+
+    Returns
+    -------
+    str
+        Resampled mask.
+    """
+    import nibabel as nib
+    from nilearn.image import resample_to_img
+
+    img = resample_to_img(source, target, interpolation="nearest")
+    nib.save(img, "mask.nii.gz")
+    return "mask.nii.gz"
+
+
 def init_resample_mask_node(
     name="resample_mask", kwargs: dict = RESAMPLE_MASK_KWARGS
 ) -> pe.Node:
@@ -160,7 +186,17 @@ def init_resample_mask_node(
     pe.Node
         *resample_mask* node.
     """
-    return pe.Node(ants.ApplyTransforms(**kwargs), name=name)
+    return pe.Node(nilearn.ResampleToImage(**kwargs), name=name)
+    # n = pe.Node(
+    #     niu.Function(
+    #         input_names=["source", "target"],
+    #         output_names=["output_image"],
+    #         function=resample_mask_func,
+    #     ),
+    #     name=name,
+    # )
+    # return pe.Node(ants.ApplyTransforms(**kwargs), name=name)
+    # return n
 
 
 def init_apply_xfm_mask_node(

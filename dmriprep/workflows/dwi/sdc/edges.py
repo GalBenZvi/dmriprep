@@ -1,5 +1,5 @@
 INPUT_TO_MERGE_EDGES = [("dwi_file", "in1"), ("fmap_file", "in2")]
 MERGE_TO_MRCAT_EDGES = [("out", "in_files")]
-MRCAT_TO_SDC_EDGES = [("out_file", "in_file")]
+MRCAT_TO_SDC_EDGES = [("out_file", "in_epi")]
 # INPUT_TO_SDC_EDGES = [("dwi_pe_dir", "pe_dir")]
 SDC_TO_OUTPUT_EDGES = [("out_file", "dwi_preproc")]

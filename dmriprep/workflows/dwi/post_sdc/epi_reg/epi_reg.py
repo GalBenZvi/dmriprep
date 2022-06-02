@@ -110,7 +110,12 @@ def init_epireg_wf(
                 apply_xfm_dwi_node,
                 [("out_transform", "linear_transform")],
             ),
-            (inputnode, apply_xfm_dwi_node, [("dwi_file", "in_files")]),
+            (
+                inputnode,
+                apply_xfm_dwi_node,
+                [("dwi_file", "in_files")],
+                # [("dwi_file", "in_files"), ("t1w_brain", "template_image")],
+            ),
             (apply_xfm_dwi_node, outputnode, [("out_file", "coreg_dwi")]),
             (
                 apply_xfm_dwi_node,
@@ -121,14 +126,18 @@ def init_epireg_wf(
                 inputnode,
                 resample_mask_node,
                 [
-                    ("t1w_mask", "input_image"),
-                    ("dwi_reference", "reference_image"),
+                    ("t1w_mask", "source"),
                 ],
+            ),
+            (
+                nii_conversion_node,
+                resample_mask_node,
+                [("out_file", "target")],
             ),
             (
                 resample_mask_node,
                 outputnode,
-                [("output_image", "coreg_dwi_mask")],
+                [("out_file", "coreg_dwi_mask")],
             ),
             (
                 inputnode,

@@ -403,6 +403,7 @@ class execution(_Config):
         "layout",
         "log_dir",
         "output_dir",
+        "dmriprep_dir",
         "templateflow_home",
         "work_dir",
     )
@@ -445,7 +446,7 @@ class execution(_Config):
                     for k, v in filters.items()
                 }
 
-        if "all" in cls.debug:
+        if cls.debug:
             cls.debug = list(DEBUG_MODES)
 
 

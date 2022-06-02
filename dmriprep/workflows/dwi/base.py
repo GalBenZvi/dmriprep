@@ -24,6 +24,7 @@
 from pathlib import Path
 
 from dmriprep.interfaces import DerivativesDataSink
+from dmriprep.interfaces.reports import DWISummary
 from dmriprep.workflows.dwi.post_sdc.epi_reg.epi_reg import init_epireg_wf
 from dmriprep.workflows.dwi.utils import _aslist, _get_wf_name
 from nipype.interfaces import utility as niu
@@ -99,6 +100,10 @@ def init_dwi_preproc_wf(dwi_file):
     from dmriprep.workflows.dwi.fieldmap_query.fieldmap_query import (
         init_fieldmap_query,
     )
+    from dmriprep.workflows.dwi.fieldmap_query.nodes import (
+        is_same_size,
+        locate_opposite_phase,
+    )
     from dmriprep.workflows.dwi.post_sdc.post_sdc import init_post_sdc_wf
     from dmriprep.workflows.dwi.pre_sdc.pre_sdc import init_pre_sdc_wf
     from dmriprep.workflows.dwi.sdc.sdc import init_sdc_wf
@@ -121,6 +126,8 @@ def init_dwi_preproc_wf(dwi_file):
             fields=[
                 # DWI
                 "dwi_file",
+                # fmap
+                "fmap_file",
                 # From anatomical
                 "t1w_preproc",
                 "t1w_mask",
@@ -140,8 +147,11 @@ def init_dwi_preproc_wf(dwi_file):
         name="inputnode",
     )
     inputnode.inputs.dwi_file = str(dwi_file.absolute())
-    fmap_query = init_fieldmap_query()
-    workflow.connect([(inputnode, fmap_query, [("dwi_file", "dwi_file")])])
+    fmap, is_dwi, pe_dir = locate_opposite_phase(str(dwi_file.absolute()))
+    seepi = is_same_size(fmap, str(dwi_file.absolute()))
+    inputnode.inputs.fmap_file = fmap
+    # fmap_query = init_fieldmap_query()
+    # workflow.connect([(inputnode, fmap_query, [("dwi_file", "dwi_file")])])
     mif_conversion_wf = init_nii_to_mif_wf()
     pre_sdc_wf = init_pre_sdc_wf()
     workflow.connect(
@@ -149,13 +159,16 @@ def init_dwi_preproc_wf(dwi_file):
             (
                 inputnode,
                 mif_conversion_wf,
-                [("dwi_file", "inputnode.dwi_file")],
+                [
+                    ("dwi_file", "inputnode.dwi_file"),
+                    ("fmap_file", "inputnode.fmap_file"),
+                ],
             ),
-            (
-                fmap_query,
-                mif_conversion_wf,
-                [("fmap_file", "inputnode.fmap_file")],
-            ),
+            # (
+            #     fmap_query,
+            #     mif_conversion_wf,
+            #     [("fmap_file", "inputnode.fmap_file")],
+            # ),
             (
                 mif_conversion_wf,
                 pre_sdc_wf,
@@ -165,7 +178,7 @@ def init_dwi_preproc_wf(dwi_file):
             ),
         ]
     )
-    sdc_wf = init_sdc_wf()
+    sdc_wf = init_sdc_wf(seepi)
     ds_report_eddy = pe.Node(
         DerivativesDataSink(
             base_directory=str(config.execution.output_dir),
@@ -175,6 +188,7 @@ def init_dwi_preproc_wf(dwi_file):
         name="ds_report_eddy",
         run_without_submitting=True,
     )
+    sdc_wf.inputs.inputnode.dwi_pe_dir = pe_dir
     workflow.connect(
         [
             (
@@ -183,15 +197,16 @@ def init_dwi_preproc_wf(dwi_file):
                 [
                     ("outputnode.dwi_pre_sdc", "inputnode.dwi_file"),
                     ("outputnode.mean_bzero", "inputnode.mean_bzero"),
+                    ("outputnode.bzero", "inputnode.dwi_bzero"),
                 ],
             ),
-            (
-                fmap_query,
-                sdc_wf,
-                [
-                    ("dwi_pe_dir", "inputnode.dwi_pe_dir"),
-                ],
-            ),
+            # (
+            #     fmap_query,
+            #     sdc_wf,
+            #     [
+            #         ("dwi_pe_dir", "inputnode.dwi_pe_dir"),
+            #     ],
+            # ),
             (
                 mif_conversion_wf,
                 sdc_wf,
@@ -369,6 +384,32 @@ def init_dwi_preproc_wf(dwi_file):
                 reportlets_wf,
                 [("eddy_report.out_report", "inputnode.sdc_report")],
             ),
+        ]
+    )
+    summary = pe.Node(
+        DWISummary(
+            distortion_correction="PEPOLAR",
+            pe_direction="j-",
+            registration="FSL",
+            registration_dof=6,
+            fallback=False,
+        ),
+        name="DWI_summary",
+        run_without_submitting=True,
+    )
+    ds_report_summary = pe.Node(
+        DerivativesDataSink(
+            base_directory=str(config.execution.output_dir),
+            desc="dwi_summary",
+            datatype="figures",
+        ),
+        name="ds_report_summary",
+        run_without_submitting=True,
+    )
+    workflow.connect(
+        [
+            (summary, ds_report_summary, [("out_report", "in_file")]),
+            (inputnode, ds_report_summary, [("dwi_file", "source_file")]),
         ]
     )
     return workflow

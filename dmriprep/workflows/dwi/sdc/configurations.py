@@ -2,7 +2,13 @@
 Configuration file for the dwi_sdc workflow.
 """
 #: i/o
-INPUT_NODE_FIELDS = ["dwi_file", "fmap_file", "dwi_pe_dir", "mean_bzero"]
+INPUT_NODE_FIELDS = [
+    "dwi_file",
+    "fmap_file",
+    "dwi_pe_dir",
+    "dwi_bzero",
+    "mean_bzero",
+]
 OUTPUT_NODE_FIELDS = ["dwi_preproc"]
 
 #: Keyword arguments

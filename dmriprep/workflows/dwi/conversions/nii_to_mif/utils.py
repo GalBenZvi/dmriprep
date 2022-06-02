@@ -12,14 +12,17 @@ def locate_associated_files(in_file: str):
     Tuple[str, str, str]
         Tuple of associated json (and possibly bvec & bval) files.
     """
-    from dmriprep.config import config
+    from pathlib import Path
+
     from nipype.interfaces.base import traits
 
+    in_file = Path(in_file)
     associated_extenstions = ["json", "bvec", "bval"]
-    layout = config.execution.layout
     output = {}
     for key in associated_extenstions:
-        output[key] = (
-            layout.get_nearest(in_file, extension=key) or traits.Undefined
-        )
+        val = in_file.parent / f"{in_file.name.split('.')[0]}.{key}"
+        if val.exists():
+            output[key] = str(val)
+        else:
+            output[key] = traits.Undefined
     return [output.get(key) for key in associated_extenstions]
